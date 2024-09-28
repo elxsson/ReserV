@@ -14,7 +14,7 @@
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
-    <div class="bg-white rounded-lg shadow-lg p-8 w-96">
+    <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
         <h2 class="text-2xl font-semibold text-center text-[#132e49]">Cadastro</h2>
         <form class="mt-4">
             <div>
