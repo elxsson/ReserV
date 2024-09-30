@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-
+use Illuminate\Auth\Events\Logout;
 
 Route::prefix('auth')->group(function () {
     Route::get('/login', [AuthController::class, 'login_create'])->name('login_create');
@@ -10,6 +10,8 @@ Route::prefix('auth')->group(function () {
 
     Route::get('/register', [AuthController::class, 'register_create'])->name('register_create');
     Route::post('/register', [AuthController::class, 'register_store'])->name('register_store');
+
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
 // normal user
