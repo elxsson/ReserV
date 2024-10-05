@@ -14,7 +14,8 @@ class RoomController extends Controller
 
     public function index()
     {
-        return view('site.room.index');
+        $rooms = Room::all();
+        return view('rooms', compact('rooms'));
     }
 
     public function create()
