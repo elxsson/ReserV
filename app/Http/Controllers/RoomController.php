@@ -9,18 +9,13 @@ class RoomController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'admin']);
+        $this->middleware(['auth', 'admin'])->except('show');
     }
 
     public function index()
     {
         $rooms = Room::all();
-        return view('rooms', compact('rooms'));
-    }
-
-    public function create()
-    {
-        return view('site.room.create');
+        return response()->json($rooms, 200);
     }
 
     public function store(Request $request)
@@ -42,13 +37,8 @@ class RoomController extends Controller
             'equipment.*.max' => 'Cada equipamento pode ter no máximo 255 caracteres.',
         ]);
 
-        Room::create($data);
-        return redirect()->route('admin-dashboard')->with('success', 'Sala Criada com Sucesso!');
-    }
-
-    public function edit(Room $room)
-    {
-        return view('site.room.edit', compact('room'));
+        $room = Room::create($data);
+        return response()->json(['message' => 'Sala Criada com Sucesso!', 'room' => $room], 201);
     }
 
     public function update(Room $room, Request $request)
@@ -61,17 +51,17 @@ class RoomController extends Controller
         ]);
 
         $room->update($request->only('name', 'capacity', 'equipment'));
-        return redirect()->route('/')->with('success', 'Sala Atualizada com Sucesso!');
+        return response()->json(['message' => 'Sala Atualizada com Sucesso!', 'room' => $room], 200);
     }
 
     public function show(Room $room)
     {
-        return view('site.room.show', compact('room'));
+        return response()->json($room, 200);
     }
 
     public function destroy(Room $room)
     {
         $room->delete();
-        return redirect()->route('/')->with('success', 'Sala Deletada com Sucesso!'); //redirecionar para o dashboard adm
+        return response()->json(['message' => 'Sala Deletada com Sucesso!'], 204);
     }
 }
