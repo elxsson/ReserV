@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Room;
 use App\Models\Reservation;
-use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -17,11 +15,11 @@ class DashboardController extends Controller
         $userReservations = Reservation::with(['room', 'user'])->where('user_id', $userId)->get();
         $totalReservations = $userReservations->count();
 
-        return view('site.dashboard', compact(
-            'totalReservations',
-            'rooms',
-            'userReservations'
-        ));
+        return response()->json([
+            'totalReservations' => $totalReservations,
+            'rooms' => $rooms,
+            'userReservations' => $userReservations,
+        ], 200);
     }
     
     // public function admin_dashboard()
