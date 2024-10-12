@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Reservation;
-use App\Models\Room;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,15 +14,9 @@ class ReservationController extends Controller
         $userId = auth()->id();
         $reservations = Reservation::with(['room', 'user'])->where('user_id', $userId)->get();
 
-        return view('site.reservation.index', compact('reservations'));
-    }
-
-    public function create(Request $request)
-    {
-        $roomId = $request->query('room_id');
-        $room = Room::find($roomId);
-    
-        return view('site.reservation.create', compact('room'));
+        return response()->json([
+            'reservations' => $reservations,
+        ], 200);
     }
 
     public function store(Request $request)
@@ -35,16 +28,24 @@ class ReservationController extends Controller
             'end_time' => 'required|date_format:H:i|after:start_time',
         ]);
 
+        // verifica a disponibilidade do horário
+        $exists = Reservation::where('room_id', $request->room_id)
+            ->where('day_reservation', $request->day_reservation)
+            ->where(function($query) use ($request) {
+                $query->whereBetween('start_time', [$request->start_time, $request->end_time])
+                    ->orWhereBetween('end_time', [$request->start_time, $request->end_time]);
+            })
+            ->exists();
+
+        if ($exists) {
+            return response()->json(['message' => 'O horário selecionado não está disponível.'], 400);
+        }
+
         $reservation = new Reservation($request->all());
         $reservation->user_id = Auth::id();
         $reservation->save();
 
-        return redirect()->route('dashboard')->with('success', 'Reserva created successfully!');
-    }
-    
-    public function edit(Reservation $reservation)
-    {
-        return view('site.reservation.edit', compact('reservation'));
+        return response()->json(['message' => 'Reserva Criada com Sucesso!'], 201);
     }
 
     public function update(Reservation $reservation, Request $request)
@@ -55,19 +56,30 @@ class ReservationController extends Controller
             'end_time' => 'required|date_format:H:i|after:start_time',
         ]);
 
-        $reservation->update($request->all());
+        $exists = Reservation::where('room_id', $reservation->room_id)
+            ->where('day_reservation', $request->day_reservation)
+            ->where('id', '<>', $reservation->id) // exclui a reserva que está sendo atualizada
+            ->where(function($query) use ($request) {
+                $query->whereBetween('start_time', [$request->start_time, $request->end_time])
+                    ->orWhereBetween('end_time', [$request->start_time, $request->end_time]);
+            })
+            ->exists();
 
-        return redirect()->route('dashboard')->with('success', 'Reserva Atualizada com Sucesso!');
-    }
+        if ($exists) {
+            return response()->json(['message' => 'O horário selecionado não está disponível.'], 400);
+        }
 
-    public function show(Reservation $reservation)
-    {
-        return view('site.reservation.show', compact('reservation'));
+        $reservation->update($request->only('day_reservation', 'start_time', 'end_time'));
+        return response()->json(['message' => 'Reserva Atualizada com Sucesso!']);
     }
 
     public function destroy(Reservation $reservation)
     {
+        if ($reservation->user_id !== auth()->id()) {
+            return response()->json(['message' => 'Você não tem permissão para deletar esta reserva.'], 403);
+        }
+
         $reservation->delete();
-        return redirect()->route('dashboard')->with('success', 'Reserva Deletada com Sucesso!');
+        return response()->json(['message' => 'Reserva Deletada com Sucesso!'], 200);
     }
 }
