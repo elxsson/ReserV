@@ -43,6 +43,11 @@ class ReservationController extends Controller
 
         $reservation = new Reservation($request->all());
         $reservation->user_id = Auth::id();
+
+        if ($reservation->user_id === null) {
+            return response()->json(['message' => 'Usuário não autenticado.'], 401);
+        }
+        
         $reservation->save();
 
         return response()->json(['message' => 'Reserva Criada com Sucesso!'], 201);
