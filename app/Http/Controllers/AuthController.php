@@ -5,17 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Laravel\Sanctum\HasApiTokens;
 
 class AuthController extends Controller
 {
-    public function register_create()
-    {
-        return view('auth.register');
-    }
 
-    public function register_store(Request $request)
+    public function register(Request $request)
     {
-
         $request->validate([
             'name' => 'required|max:255',
             'email' => 'required|email|max:255|unique:users,email',
@@ -43,32 +39,40 @@ class AuthController extends Controller
 
         Auth::login($user);
 
-        return redirect('/site/dashboard')->with('success', 'Conta criada com sucesso!');
+        return response()->json([
+            'message' => 'Conta criada com sucesso!',
+            'user' => $user,
+        ], 201);
     }
-
     
-    public function login_create()
-    {
-        return view('auth.login');
-    }
-
     public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
 
-        if (Auth::attempt($credentials)) {
-            return redirect()->intended('/site/dashboard')
-                             ->with('success', 'Login realizado com sucesso!');
-        }
 
-        return back()->withInput($request->only('email'))
-                     ->with('error', 'Credenciais inválidas. Por favor, tente novamente.');
+        if (Auth::attempt($credentials)) {
+            $user = Auth::user();
+            $token = $user->createToken('Token Name')->plainTextToken;
+
+            return response()->json([
+                'message' => 'Login realizado com sucesso!',
+                'user' => $user,
+                'token' => $token
+            ], 200);
+        }
+    
+        return response()->json([
+            'message' => 'Credenciais inválidas. Por favor, tente novamente.',
+        ], 401);
     }
 
     public function logout()
     {
         Auth::logout();
-        return redirect()->route('login_create')->with('success', 'Você foi desconectado com sucesso.');
+
+        return response()->json([
+            'message' => 'Logout realizado com sucesso!',
+        ], 200);
     }
 
 }
