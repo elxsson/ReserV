@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Laravel\Sanctum\HasApiTokens;
 
 class AuthController extends Controller
 {
@@ -48,10 +49,15 @@ class AuthController extends Controller
     {
         $credentials = $request->only('email', 'password');
 
+
         if (Auth::attempt($credentials)) {
+            $user = Auth::user();
+            $token = $user->createToken('Token Name')->plainTextToken;
+
             return response()->json([
                 'message' => 'Login realizado com sucesso!',
-                'user' => Auth::user(),
+                'user' => $user,
+                'token' => $token
             ], 200);
         }
     
